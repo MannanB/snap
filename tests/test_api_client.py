@@ -1,15 +1,3 @@
-# high level testing
-# snap.api.API class
-# caching with snap.api.API
-# using different functions with snap.httpreq.Session integration
-
-
-# list of things to test
-# API endpoint adding
-# API cache usage
-# httpreq asyncio windows policy wierd thingy (Test for different dvices)
-#
-
 import unittest
 import snap
 import time

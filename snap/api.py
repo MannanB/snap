@@ -93,11 +93,10 @@ class API:
             self.rotate_thread.join()
 
     def apply_key(self, dct):
-        #print(f'AK BEFORE: {self.calls}')
         if self.rotate_key:
             with self.lock:
                 self.calls += 1  # technically a call hasnt happened yet
-        #print(f'AK AFTER: {self.calls}')
+
         for i, name in enumerate(self.key_names):
             if self.rotate_key:
                 dct[name] = self.key[i][self.key_idx]
@@ -113,7 +112,6 @@ class API:
                     if self.rotate_key:
                         if self.rotate_method == ROTATE_METHOD_CALLS:
                             if self.calls >= self.rotate_max_calls:
-                                print(self.calls)
                                 self.key_idx += 1
                                 self.calls = 0
                         elif self.rotate_method == ROTATE_METHOD_TIME:
@@ -124,7 +122,7 @@ class API:
                             self.key_idx = 0
             except (KeyboardInterrupt, SystemExit):
                 break
-        print('BRO')
+
 
     def toggle_async(self):
         self.use_async = not self.use_async

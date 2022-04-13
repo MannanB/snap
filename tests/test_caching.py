@@ -1,16 +1,3 @@
-# high level testing
-# snap.api.API class
-# caching with snap.api.API
-# using different functions with snap.httpreq.Session integration
-
-
-# list of things to test
-# FIFO
-# LRU
-# MRU
-# LFU
-# RR
-
 import random
 import unittest
 from snap.cache import *
