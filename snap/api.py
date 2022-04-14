@@ -95,7 +95,7 @@ class API:
     def apply_key(self, dct):
         if self.rotate_key:
             with self.lock:
-                self.calls += 1  # technically a call hasnt happened yet
+                self.calls += 1
 
         for i, name in enumerate(self.key_names):
             if self.rotate_key:
@@ -105,7 +105,6 @@ class API:
         return dct
 
     def rotate_api_key(self, done_queue):
-        # check if the api key needs to be rotated. if so, rotate it
         while done_queue.empty():
             try:
                 with self.lock:
@@ -215,7 +214,6 @@ class API:
 
         # attempt to get the amount of reqeusts any way possible
         # The function will take in either a list or a string/dict for names,endpoints,headers,params,etc
-        # The amount of requests will be grabbed anyway possible
 
         if names is None and endpoints is None:
             raise ValueError('No url(s) were given.')

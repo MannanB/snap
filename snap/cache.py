@@ -1,5 +1,5 @@
+import time
 import pickle
-from time import time
 from random import choice
 from threading import Lock
 
@@ -47,7 +47,7 @@ class MemoryCache:
 
             policy_value = 0
             if self.cache_policy == FIFO:
-                policy_value = time()
+                policy_value = time.time()
             self.cache[(url, params, headers)] = [result, policy_value]
 
     async def add_item_async(self, url, result, params=None, headers=None):
@@ -71,7 +71,7 @@ class MemoryCache:
 
             policy_value = 0
             if self.cache_policy == FIFO:
-                policy_value = time()
+                policy_value = time.time()
             self.cache[(url, params, headers)] = [result, policy_value]
 
     def get_item(self, url, params=None, headers=None):
@@ -82,7 +82,7 @@ class MemoryCache:
         with self.lock:
             if (url, params, headers) in self.cache:
                 if self.cache_policy == LRU or self.cache_policy == MRU:
-                    self.cache[(url, params, headers)][1] = time()
+                    self.cache[(url, params, headers)][1] = time.time()
                 elif self.cache_policy == LFU:
                     self.cache[(url, params, headers)][1] += 1
                 return self.cache[(url, params, headers)][0]
@@ -95,7 +95,7 @@ class MemoryCache:
         with self.lock:
             if (url, params, headers) in self.cache:
                 if self.cache_policy == LRU or self.cache_policy == MRU:
-                    self.cache[(url, params, headers)][1] = time()
+                    self.cache[(url, params, headers)][1] = time.time()
                 elif self.cache_policy == LFU:
                     self.cache[(url, params, headers)][1] += 1
                 return self.cache[(url, params, headers)][0]

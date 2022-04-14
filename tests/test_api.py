@@ -6,7 +6,7 @@ app = Flask(__name__)
 api = Api(app)
 
 log = logging.getLogger('werkzeug')
-log.disabled = True # change to false if u want logs
+log.disabled = False # change to false if u want logs
 
 x = 0
 key_counter = {}

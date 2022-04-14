@@ -1,3 +1,4 @@
+import time
 import random
 import unittest
 from snap.cache import *
@@ -30,9 +31,11 @@ class TestCaching(unittest.TestCase):
             cache.add_item(f'https://test{x}.com', {'data': f'test{x}'}, params={'x': x}, headers={'x': x})
         for x in range(10):
             cache.get_item(f'https://test{x}.com', params={'x': x}, headers={'x': x})
+            time.sleep(0.2)
         cache.add_item('https://test.com', {'data': f'test'}, params={'x': -1}, headers={'x': -1})
         self.assertEqual(len(cache.cache), 10)  # ensure its still 10
-        self.assertEqual(cache.cache.get(('https://test0.com', (('x', 0),), (('x', 0),))), None)
+        print(cache.cache)
+        self.assertEqual(cache.cache.get(('https://test9.com', (('x', 9),), (('x', 9),))), None)
         self.assertEqual(cache.get_item('https://test.com', params={'x':-1}, headers={'x':-1}), {'data': f'test'})
 
     def test_lfu(self):

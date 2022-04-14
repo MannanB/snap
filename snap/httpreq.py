@@ -41,12 +41,21 @@ class Session:
                  ssl: bool = True,
                  cache: Optional[MemoryCache] = None,
                  headers: Optional[dict] = None) -> None:
-        self.loop = asyncio.get_event_loop()
         self.global_headers = headers
         self.use_async = use_async
         self.ssl = ssl
         self.session = None
+        self.loop = None
         self.cache = cache
+
+    def run_async(self, coroutine):
+        if self.loop is None:
+            try:
+                self.loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self.loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self.loop)
+        return self.loop.run_until_complete(coroutine)
 
     def get_session(self) -> requests.Session:
         """
@@ -55,7 +64,7 @@ class Session:
         """
         if self.session is None or isinstance(self.session, aiohttp.ClientSession):
             if self.session:
-                self.loop.run_until_complete(self.close_async())
+                self.run_async(self.close_async())
             self.session = requests.Session()
         return self.session
 
@@ -82,7 +91,7 @@ class Session:
         if self.session is None:
             return
         if self.use_async:
-            self.loop.run_until_complete(self.close_async())
+            self.run_async(self.close_async())
         else:
             self.session.close()
 
@@ -94,7 +103,7 @@ class Session:
         if self.use_async:
             # there is no good way to update headers with aiohttp, so just restart the session
             self.session = None
-            self.loop.run_until_complete(self.get_session_async())
+            self.run_async(self.get_session_async())
         else:
             self.session.headers.update(self.global_headers)
 
@@ -138,7 +147,7 @@ class Session:
             ssl = self.ssl
 
         if use_async:
-            return self.loop.run_until_complete(
+            return self.run_async(
                 self.request_async(method, url, params=params, headers=headers, data=data, retries=retries,
                                    session=session, retry_delay=retry_delay,
                                    ssl=ssl))
@@ -172,21 +181,17 @@ class Session:
         url_buf += '?'
         for key, value in params.items():
             url_buf += key+'='+value+'&'
-        url_buf = url_buf[:-1]  # get rid of the last & (or the ? in case there were no params)
+        url_buf = url_buf[:-1]
 
-        # repeatedly request the API until retries runs out
         while 1:
-            # request the API
             result = session.request(method, url=url_buf, headers=headers, data=data, verify=ssl)
             if result.status_code != 200:
-                # try again if there are retries, otherwise just return the status code
                 if retries == 0:
                     return Response(status=result.status_code)
                 retries -= 1
                 sleep(retry_delay)
                 continue
             else:
-                # return the result
                 response = Response(output=result.content, status=result.status_code)
                 if self.cache:
                     self.cache.add_item(url, response, params=params, headers=headers)
@@ -203,11 +208,9 @@ class Session:
                             retry_delay: Union[int, float] = 1,
                             ssl: Optional[bool] = None) -> Response:
 
-        # retreive the session
         if session is None:
             session = await self.get_session_async()
 
-        # get the result if it is within the cache
         if self.cache:
             cached_result = await self.cache.get_item_async(url, params=params, headers=headers)
             if cached_result:
@@ -218,18 +221,14 @@ class Session:
         while 1:
             async with session.request(method, url, params=params, headers=headers, data=data, ssl=ssl) as resp:
                 if resp.status != 200:
-                    # Retry if there are retries left
                     if retries == 0:
                         if callback:  # callback is only used for get_bulk_async
                             callback['response'] = Response(status=resp.status)
                         return Response(status=resp.status)
                     retries -= 1
                     if retry_delay:
-                        # sleep the retry_delay time (probably just set at 0 if getting bulk, since there are other
-                        # connections anyway?)
                         await asyncio.sleep(retry_delay)
                     continue
-                # Get the json response
                 text_resp = await resp.text()
                 response = Response(output=text_resp, status=resp.status)
                 if callback:
@@ -270,7 +269,6 @@ class Session:
         :param ssl: Whether to certify with ssl or not
         :return: A list of Responses
         """
-        # ensure that each url is valid
         urls = [self.validate_url(u) for u in urls]
 
         if use_async is None:
@@ -286,8 +284,7 @@ class Session:
                                               num_threads=num_threads, per=per, retries=retries, retry_delay=retry_delay,
                                               use_async=use_async, ssl=ssl)
         elif use_async:
-            # Use async version if use_async is True
-            return self.loop.run_until_complete(
+            return self.run_async(
                 self.request_bulk_async(method, urls, params=params, headers=headers, data=data, session=session,
                                         max_connections=max_connections, per=per, retries=retries,
                                         retry_delay=retry_delay,
@@ -320,7 +317,6 @@ class Session:
                 header = headers[i]
             if data:
                 dt = data[i]
-            # get results
 
             responses.append(self.request(method, urls[i], params=param, headers=header, data=dt, session=session,
                                           retries=retries, retry_delay=retry_delay, ssl=ssl))
